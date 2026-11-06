@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Command Center</title>
+<style>
+  :root{color-scheme:dark light}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0e1420;color:#e6ebf5;font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+  .box{max-width:520px;padding:32px;text-align:center}
+  h1{font-size:15px;letter-spacing:.14em;margin:0 0 6px}
+  p{color:#8d9bb5;margin:8px 0}
+  .spin{width:34px;height:34px;border:3px solid #26324a;border-top-color:#4c9aff;border-radius:50%;margin:18px auto;animation:s 1s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  a.btn,button{display:inline-block;background:#4c9aff;color:#fff;border:0;border-radius:6px;padding:10px 20px;font:inherit;cursor:pointer;text-decoration:none;margin:8px 4px}
+  button.alt{background:#1c2639;border:1px solid #26324a;color:#e6ebf5}
+  .hide{display:none}
+  code{background:#1c2639;padding:1px 6px;border-radius:4px;color:#cfe3ff}
+  ol{text-align:left;color:#8d9bb5}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>COMMAND CENTER</h1>
+  <div id="checking"><div class="spin"></div><p>Connecting to the helper…</p></div>
+  <div id="down" class="hide">
+    <p><b>The helper is not running.</b></p>
+    <p>It is a small PowerShell script on this laptop that runs your commands and launches your programs.</p>
+    <a class="btn" id="start" href="occstart:run">Start helper</a>
+    <button class="alt" id="retry">Check again</button>
+    <p id="starting" class="hide">Starting… if your browser asks to open <code>Windows PowerShell / wscript</code>, allow it (tick “always allow”).</p>
+    <div id="help" class="hide">
+      <p>Still not running? Other ways to start it:</p>
+      <ol>
+        <li>Double-click <code>Start Command Center.bat</code> in this folder (shows any error).</li>
+        <li>Run <code>install.ps1</code> once so “Start helper” works and it starts at login.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+<script>
+  var URL_HOME = "http://127.0.0.1:8765/";
+  var tries = 0, started = false;
+  function alive() {
+    // no-cors: we only need to know the helper answered; no data is read.
+    return fetch(URL_HOME + "ping", { mode: "no-cors", cache: "no-store" }).then(function () { return true; }, function () { return false; });
+  }
+  function check() {
+    return alive().then(function (ok) {
+      if (ok) { location.replace(URL_HOME); return true; }
+      document.getElementById("checking").className = "hide";
+      document.getElementById("down").className = "";
+      return false;
+    });
+  }
+  function waitForStart() {
+    document.getElementById("starting").className = "";
+    var n = 0;
+    var t = setInterval(function () {
+      n++;
+      alive().then(function (ok) { if (ok) { clearInterval(t); location.replace(URL_HOME); } });
+      if (n === 10) document.getElementById("help").className = "";
+      if (n > 40) clearInterval(t);
+    }, 1000);
+  }
+  document.getElementById("start").addEventListener("click", function () { waitForStart(); });
+  document.getElementById("retry").addEventListener("click", check);
+  check();
+</script>
+</body>
+</html>
